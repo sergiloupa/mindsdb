@@ -7,11 +7,11 @@ SAP MaxDB is a high-performance, scalable, and reliable database management syst
 ## Implementation
 To establish a connection with SAP MaxDB, the following arguments are required:
 
-* host: the hostname or IP address of the SAP MaxDB server
-* port: the port number to use when connecting to the server
-* user: the user to authenticate
-* password: the password to authenticate the user
-* database: the name of the database to connect to
+* `host`: the hostname or IP address of the SAP MaxDB server
+* `port`: the port number to use when connecting to the server
+* `user`: the user to authenticate
+* `password`: the password to authenticate the user
+* `database`: the name of the database to connect to
 
 Once a connection is established, users can leverage the power of MindsDB's automated machine learning to easily generate accurate predictions on their SAP MaxDB data. The handler supports various features such as custom queries, column selection, and row filtering to provide a seamless integration with SAP MaxDB databases.
 
