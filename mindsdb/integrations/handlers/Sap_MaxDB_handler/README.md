@@ -20,10 +20,10 @@ In order to make use of this handler and connect to a MaxDB database in MindsDB,
 ```sql
 CREATE DATABASE MaxDB_datasource
 WITH
-engine='MaxDB',
+engine='maxdb',
 parameters={
     "host": "127.0.0.1",
-    "port": "3306",
+    "port": "7210",
     "user": "user",
     "password": "pass",
     "database": "db_name"

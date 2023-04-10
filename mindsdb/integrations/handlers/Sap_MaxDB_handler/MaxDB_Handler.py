@@ -12,7 +12,6 @@ from mindsdb.integrations.libs.response import (
     HandlerResponse as Response,
     RESPONSE_TYPE
 )
-from mindsdb_sql.render.sqlalchemy_render import SqlalchemyRender
 
 class MindsDB_Handler(DatabaseHandler):
     """
