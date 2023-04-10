@@ -1,8 +1,8 @@
 from typing import Optional
 from collections import OrderedDict
 from mindsdb.integrations.libs.base import DatabaseHandler
-import MaxDB.connector
 import pandas
+import pyodbc
 from mindsdb_sql import parse_sql
 from mindsdb.utilities import log
 from mindsdb_sql.parser.ast.base import ASTNode
@@ -34,11 +34,9 @@ class MindsDB_Hanlder(DatabaseHandler):
 
 
     def connect(self):
-        """ Set up any connections required by the handler
-        Should return output of check_connection() method after attempting
-        connection. Should switch self.is_connected.
+        """Connect to a MaxDB database.
         Returns:
-            HandlerStatusResponse
+            Connection: The database connection.
         """
         if self.is_connected is True:
             return self.connection
@@ -50,20 +48,7 @@ class MindsDB_Hanlder(DatabaseHandler):
             'password': self.connection_data.get('password'),
             'database': self.connection_data.get('database')
         }
-        ssl = self.connection_data.get('ssl')
-        if ssl is True:
-            ssl_ca = self.connection_data.get('ssl_ca')
-            ssl_cert = self.connection_data.get('ssl_cert')
-            ssl_key = self.connection_data.get('ssl_key')
-            config['client_flags'] = [MaxDB.connector.constants.ClientFlag.SSL]
-            if ssl_ca is not None:
-                config["ssl_ca"] = ssl_ca
-            if ssl_cert is not None:
-                config["ssl_cert"] = ssl_cert
-            if ssl_key is not None:
-                config["ssl_key"] = ssl_key
-
-        connection = MaxDB.connector.connect(**config)
+        connection = pyodbc.connect(**config)
         self.is_connected = True
         self.connection = connection
         return self.connection
@@ -73,9 +58,7 @@ class MindsDB_Hanlder(DatabaseHandler):
             self.disconnect()
 
     def disconnect(self):
-        """ Close any existing connections
-        Should switch self.is_connected.
-        """
+        """Close the database connection."""
         if self.is_connected is False:
             return
         self.connection.close()
@@ -83,9 +66,9 @@ class MindsDB_Hanlder(DatabaseHandler):
         return
 
     def check_connection(self):
-        """ Check connection to the handler
+        """Check the connection to the MaxDB database.
         Returns:
-            HandlerStatusResponse
+            StatusResponse: Connection success status and error message if an error occurs.
         """
         response = StatusResponse(False)
         need_to_close = self.is_connected is False
@@ -94,7 +77,7 @@ class MindsDB_Hanlder(DatabaseHandler):
             self.connect()
             response.success = True
         except Exception as e:
-            log.logger.error(f'Error connecting to Redshift {self.connection_data["database"]}, {e}!')
+            log.logger.error(f'Error connecting to MaxDB {self.connection_data["database"]}, {e}!')
             response.error_message = str(e)
         finally:
             if response.success is True and need_to_close:
@@ -105,19 +88,21 @@ class MindsDB_Hanlder(DatabaseHandler):
         return response
 
     def native_query(self, query: str):
-        """Receive raw query and act upon it somehow.
+        """Execute a SQL query.
         Args:
-            query (Any): query in native format (str for sql databases,
-                dict for mongo, etc)
+            query (str): The SQL query to execute.
         Returns:
-            HandlerResponse
+            Response: The query result.
         """
         need_to_close = self.is_connected is False
 
         connection = self.connect()
+        "The dictionary=True parameter specifies that the cursor should return each row as a dictionary with column names as the keys and column values as the values."
+        "The buffered=True parameter specifies that the cursor should buffer the results in memory so that they can be fetched multiple times."
         with connection.cursor(dictionary=True, buffered=True) as cur:
             try:
                 cur.execute(query)
+                "We check if the cursor has rows available for fetching or not."
                 if cur.with_rows:
                     result = cur.fetchall()
                     response = Response(
@@ -137,32 +122,27 @@ class MindsDB_Hanlder(DatabaseHandler):
                     error_message=str(e)
                 )
                 connection.rollback()
-
+        cur.close()
         if need_to_close is True:
             self.disconnect()
 
         return response
 
     def query(self, query: ASTNode):
-        """Receive query as AST (abstract syntax tree) and act upon it somehow.
-        Args:
-            query (ASTNode): sql query represented as AST. May be any kind
-                of query: SELECT, INSERT, DELETE, etc
-        Returns:
-            HandlerResponse
+        """Receive query as AST (abstract syntax tree) and act upon it.
         """
-        renderer = SqlalchemyRender('maxdb')
-        query_str = renderer.get_string(query, with_failback=True)
+        if isinstance(query, ASTNode):
+            query_str = query.to_string()
+        else:
+            query_str = str(query)
+
         return self.native_query(query_str)
 
 
     def get_tables(self):
-        """ Return list of entities
-        Return list of entities that will be accesible as tables.
+        """Get a list of all the tables in the database.
         Returns:
-            HandlerResponse: shoud have same columns as information_schema.tables
-                (https://dev.mysql.com/doc/refman/8.0/en/information-schema-tables-table.html)
-                Column 'TABLE_NAME' is mandatory, other is optional.
+            Response: Names of the tables in the database.
         """
         q = "SHOW TABLES;"
         result = self.native_query(q)
@@ -171,15 +151,11 @@ class MindsDB_Hanlder(DatabaseHandler):
         return result
 
     def get_columns(self, table_name: str):
-        """ Returns a list of entity columns
+        """Get details about a table.
         Args:
-            table_name (str): name of one of tables returned by self.get_tables()
+            table_name (str): Name of the table to retrieve details of.
         Returns:
-            HandlerResponse: shoud have same columns as information_schema.columns
-                (https://dev.mysql.com/doc/refman/8.0/en/information-schema-columns-table.html)
-                Column 'COLUMN_NAME' is mandatory, other is optional. Hightly
-                recomended to define also 'DATA_TYPE': it should be one of
-                python data types (by default it str).
+            Response: Details of the table.
         """
         q = f"DESCRIBE {table_name};"
         result = self.native_query(q)
@@ -206,22 +182,6 @@ connection_args = OrderedDict(
     port = {
         'type': ARG_TYPE.INT,
         'description': 'The TCP/IP port of the MaxDB server. Must be an integer.'
-    },
-    ssl = {
-        'type': ARG_TYPE.BOOL,
-        'description': 'Set it to False to disable ssl.'
-    },
-    ssl_ca = {
-        'type': ARG_TYPE.PATH,
-        'description': 'Path or URL of the Certificate Authority (CA) certificate file'
-    },
-    ssl_cert = {
-        'type': ARG_TYPE.PATH,
-        'description': 'Path name or URL of the server public key certificate file'
-    },
-    ssl_key = {
-        'type': ARG_TYPE.PATH,
-        'description': 'The path name or URL of the server private key file'
     }
 )
 connection_args_example = OrderedDict(
