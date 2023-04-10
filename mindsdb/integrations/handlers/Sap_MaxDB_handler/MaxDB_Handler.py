@@ -14,7 +14,7 @@ from mindsdb.integrations.libs.response import (
 )
 from mindsdb_sql.render.sqlalchemy_render import SqlalchemyRender
 
-class MindsDB_Hanlder(DatabaseHandler):
+class MindsDB_Handler(DatabaseHandler):
     """
     This Handler handles connection and execution of MindsDB statements.
     """
@@ -177,7 +177,7 @@ connection_args = OrderedDict(
     },
     host = {
         'type': ARG_TYPE.STR,
-        'description': 'The host name or IP address of the MaxDB server. NOTE: use \'127.0.0.1\' instead of \'localhost\' to connect to local server.'
+        'description': 'The host name or IP address of the MaxDB server.'
     },
     port = {
         'type': ARG_TYPE.INT,
