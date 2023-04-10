@@ -16,7 +16,7 @@ To establish a connection with SAP MaxDB, the following arguments are required:
 Once a connection is established, users can leverage the power of MindsDB's automated machine learning to easily generate accurate predictions on their SAP MaxDB data. The handler supports various features such as custom queries, column selection, and row filtering to provide a seamless integration with SAP MaxDB databases.
 
 ## Usage
-In order to make use of this handler and connect to a MaxDB database in MindsDB, the following syntax can be used,
+In order to make use of this handler and connect to a MaxDB database in MindsDB, the following syntax can be used:
 ```sql
 CREATE DATABASE MaxDB_datasource
 WITH
@@ -31,5 +31,5 @@ parameters={
 ```
 Now, you can use this established connection to query your database as follows,
 ```sql
-SELECT * FROM MaxDB_datasource.example_tbl
+SELECT * FROM MaxDB_datasource.table_name
 ```
