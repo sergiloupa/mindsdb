@@ -17,6 +17,7 @@ class MindsDB_Handler(DatabaseHandler):
     """
     This Handler handles connection and execution of MindsDB statements.
     """
+    name = 'maxdb'
     def __init__(self, name: str, connection_data: Optional[dict], **kwargs):
         """ constructor
         Args:
@@ -24,7 +25,7 @@ class MindsDB_Handler(DatabaseHandler):
         """
         super().__init__(name)
         self.parser = parse_sql
-        self.dialect = 'maxdb'
+        self.dialect = "maxdb"
         self.connection_data = connection_data
         self.kwargs = kwargs
 
@@ -47,9 +48,13 @@ class MindsDB_Handler(DatabaseHandler):
             'password': self.connection_data.get('password'),
             'database': self.connection_data.get('database')
         }
-        connection = pyodbc.connect(**config)
-        self.is_connected = True
-        self.connection = connection
+        try:
+            connection = pyodbc.connect(**config)
+            self.is_connected = True
+            self.connection = connection
+        except Exception as e:
+            log.logger.error(f"Error while connecting to MaxDB,{e}")
+
         return self.connection
 
     def __del__(self):
@@ -60,8 +65,12 @@ class MindsDB_Handler(DatabaseHandler):
         """Close the database connection."""
         if self.is_connected is False:
             return
-        self.connection.close()
-        self.is_connected = False
+        try:
+            self.connection.close()
+            self.is_connected = False
+        except Exception as e:
+            log.logger.error(f"Error while disconnecting from MaxDB, {e}")
+
         return
 
     def check_connection(self):
@@ -76,7 +85,7 @@ class MindsDB_Handler(DatabaseHandler):
             self.connect()
             response.success = True
         except Exception as e:
-            log.logger.error(f'Error connecting to MaxDB {self.connection_data["database"]}, {e}!')
+            log.logger.error(f'Error connecting to MaxDB, {e}!')
             response.error_message = str(e)
         finally:
             if response.success is True and need_to_close:
@@ -94,33 +103,28 @@ class MindsDB_Handler(DatabaseHandler):
             Response: The query result.
         """
         need_to_close = self.is_connected is False
-
         connection = self.connect()
-        "The dictionary=True parameter specifies that the cursor should return each row as a dictionary with column names as the keys and column values as the values."
-        "The buffered=True parameter specifies that the cursor should buffer the results in memory so that they can be fetched multiple times."
-        with connection.cursor(dictionary=True, buffered=True) as cur:
-            try:
-                cur.execute(query)
-                "We check if the cursor has rows available for fetching or not."
-                if cur.with_rows:
-                    result = cur.fetchall()
-                    response = Response(
-                        RESPONSE_TYPE.TABLE,
-                        pandas.DataFrame(
-                            result,
-                            columns=[x[0] for x in cur.description]
-                        )
-                    )
-                else:
-                    response = Response(RESPONSE_TYPE.OK)
-                connection.commit()
-            except Exception as e:
-                log.logger.error(f'Error running query: {query} on {self.connection_data["database"]}!')
+        cur = connection.cursor()
+        try:
+            cur.execute(query)
+            "We check if the cursor has rows available for fetching or not."
+            if cur.with_rows:
+                result = cur.fetchall()
                 response = Response(
-                    RESPONSE_TYPE.ERROR,
-                    error_message=str(e)
+                    RESPONSE_TYPE.TABLE,
+                    pandas.DataFrame(
+                        result,
+                        columns=[x[0] for x in cur.description]
+                    )
                 )
-                connection.rollback()
+            else:
+                response = Response(RESPONSE_TYPE.OK)
+        except Exception as e:
+            log.logger.error(f'Error running query: {query} on MaxDB!')
+            response = Response(
+                RESPONSE_TYPE.ERROR,
+                error_message=str(e)
+            )
         cur.close()
         if need_to_close is True:
             self.disconnect()
@@ -185,7 +189,7 @@ connection_args = OrderedDict(
 )
 connection_args_example = OrderedDict(
     host = '127.0.0.1',
-    port = 3306,
+    port = 7210,
     user = 'root',
     password = 'password',
     database = 'database'
