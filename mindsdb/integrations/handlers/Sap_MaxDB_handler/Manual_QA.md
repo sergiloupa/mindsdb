@@ -1,8 +1,8 @@
-# Welcome to the MindsDB Manual QA Testing for Redshift Handler
+# Welcome to the MindsDB Manual QA Testing for MaxDB Handler
 
 > **Please submit your PR in the following format after the underline below `Results` section. Don't forget to add an underline after adding your changes i.e., at the end of your `Results` section.**
 
-## Testing Redshift Handler with [Dataset Name](URL to the Dataset)
+## Testing MaxDB Handler with [Dataset Name](URL to the Dataset)
 
 **1. Testing CREATE DATABASE**
 
