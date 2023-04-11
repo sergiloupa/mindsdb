@@ -1,1 +1,1 @@
-1. sdb.dbapi
+1. sdb.dbapi, to download it go to terminal and use the command: pip install sdb.
