@@ -110,7 +110,7 @@ class MindsDB_Handler(DatabaseHandler):
         cur = connection.cursor()
         try:
             cur.execute(query)
-            "We check if the cursor has rows available for fetching or not."
+            #We check if the cursor has rows available for fetching or not.
             if cur.with_rows:
                 result = cur.fetchall()
                 response = Response(
