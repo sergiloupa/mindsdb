@@ -190,7 +190,7 @@ connection_data = OrderedDict(
         'description': 'The TCP/IP port of the MaxDB server. Must be an integer.'
     }
 )
-connection_args_example = OrderedDict(
+connection_data_example = OrderedDict(
     host = '127.0.0.1',
     port = 7210,
     user = 'root',
