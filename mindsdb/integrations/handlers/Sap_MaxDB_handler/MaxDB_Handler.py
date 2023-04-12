@@ -168,7 +168,7 @@ class MindsDB_Handler(DatabaseHandler):
         return result
 
 
-connection_args = OrderedDict(
+connection_data = OrderedDict(
     user = {
         'type': ARG_TYPE.STR,
         'description': 'The user name used to authenticate with the MaxDB server.'
