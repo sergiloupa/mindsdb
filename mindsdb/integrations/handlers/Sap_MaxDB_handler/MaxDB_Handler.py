@@ -13,7 +13,7 @@ from mindsdb.integrations.libs.response import (
     RESPONSE_TYPE
 )
 #Check requirements.txt
-import sdb.dbapi
+#import sdb.dbapi
 
 
 class MindsDB_Handler(DatabaseHandler):
@@ -21,7 +21,7 @@ class MindsDB_Handler(DatabaseHandler):
     This Handler handles connection and execution of MindsDB statements.
     """
     name = 'maxdb'
-    def __init__(self, name: str, connection_data: Optional[dict], **kwargs):
+    def __init__(self, name: str, **kwargs):
         """ constructor
         Args:
             name (str): the handler name
@@ -29,7 +29,7 @@ class MindsDB_Handler(DatabaseHandler):
         super().__init__(name)
         self.parser = parse_sql
         self.dialect = "maxdb"
-        self.connection_data = connection_data
+        self.connection_data = kwargs.get("connection_data")
         self.kwargs = kwargs
 
         self.connection = None
@@ -52,7 +52,7 @@ class MindsDB_Handler(DatabaseHandler):
             'database': self.connection_data.get('database')
         }
         try:
-            connection = sdb.dbapi.connect(**config)
+            connection = pyodbc.connect(**config)
             self.is_connected = True
             self.connection = connection
         except Exception as e:
