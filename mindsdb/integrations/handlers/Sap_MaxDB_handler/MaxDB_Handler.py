@@ -13,7 +13,7 @@ from mindsdb.integrations.libs.response import (
     RESPONSE_TYPE
 )
 #Check requirements.txt
-#import sdb.dbapi
+import sdb.dbapi
 
 
 class MindsDB_Handler(DatabaseHandler):
@@ -52,7 +52,7 @@ class MindsDB_Handler(DatabaseHandler):
             'database': self.connection_data.get('database')
         }
         try:
-            connection = pyodbc.connect(**config)
+            connection = sdb.dbapi.connect(**config)
             self.is_connected = True
             self.connection = connection
         except Exception as e:
