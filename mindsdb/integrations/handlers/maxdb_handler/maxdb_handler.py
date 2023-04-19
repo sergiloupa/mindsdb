@@ -31,14 +31,12 @@ class MaxDBHandler(DatabaseHandler):
         self.connection_config = connection_data
         self.host = connection_data['host']
         self.port = connection_data['port']
-        print(self.port)
         self.user = connection_data['user']
         self.password = connection_data['password']
         self.jdbcClass = 'com.sap.dbtech.jdbc.DriverSapDB'
         self.jdbcJarLocation = '/Users/falin/PycharmProjects/testing/libs/sapdbc.jar'
         self.connection = None
         self.is_connected = False
-        print("init ok!!")
 
     def __del__(self):
         """
@@ -46,7 +44,6 @@ class MaxDBHandler(DatabaseHandler):
         """
         if self.is_connected is True:
             self.disconnect()
-        print("del ok!!")
 
     def connect(self) -> StatusResponse:
         """
@@ -56,14 +53,12 @@ class MaxDBHandler(DatabaseHandler):
         """
         if self.is_connected:
             return self.connection
-        print("connect stage 1 ok!!")
 
         url = 'jdbc:sapdb://' + self.host + ':' + self.port + '/' + self.database
 
         # Open connection to database
         self.connection = jd.connect(self.jdbcClass, url, [self.user, self.password], jars=self.jdbcJarLocation)
         self.is_connected = True
-        print("connect ok!!")
         return self.connection
 
     def disconnect(self):
@@ -231,5 +226,5 @@ connection_args_example = OrderedDict(
     password='test',
     database="testdb",
     jdbcClass='com.sap.dbtech.jdbc.DriverSapDB',
-    jdbcJarLocation='/Users/falin/PycharmProjects/testing/libs/sapdbc.jar',
+    jdbcJarLocation='/Users/malid/Desktop/marsidmali-algo-assignments/assignment-2023-1/sapdbc.jar',
 )

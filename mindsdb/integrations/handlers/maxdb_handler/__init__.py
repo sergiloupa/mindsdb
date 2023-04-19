@@ -10,8 +10,7 @@ try:
 except Exception as e:
     Handler = None
     import_error = e
-from mindsdb.integrations.handlers.maxdb_handler.__about__ import __version__ as version, \
-    __description__ as description
+from .__about__ import __version__ as version, __description__ as description
 
 
 title = 'Sap MaxDB'
