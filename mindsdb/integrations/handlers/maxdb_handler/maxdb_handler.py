@@ -1,6 +1,8 @@
 from collections import OrderedDict
 from typing import Optional
 from mindsdb_sql.parser.ast.base import ASTNode
+from mindsdb_sql.render.sqlalchemy_render import SqlalchemyRender
+
 from mindsdb.integrations.libs.base import DatabaseHandler
 from mindsdb.utilities import log
 from mindsdb_sql import parse_sql
@@ -25,7 +27,6 @@ class MaxDBHandler(DatabaseHandler):
             **kwargs: arbitrary keyword arguments.
         """
         super().__init__(name)
-        print("*")
         self.kwargs = kwargs
         self.parser = parse_sql
         self.database = connection_data['database']
@@ -38,7 +39,6 @@ class MaxDBHandler(DatabaseHandler):
         self.jdbcJarLocation = '/MindsDB/mindsdb/mindsdb/integrations/handlers/maxdb_handler/jdbc_driver/sapdbc.jar'
         self.connection = None
         self.is_connected = False
-        print("**")
 
     def __del__(self):
         """
@@ -46,7 +46,6 @@ class MaxDBHandler(DatabaseHandler):
         """
         if self.is_connected is True:
             self.disconnect()
-        print("***")
 
     def connect(self) -> StatusResponse:
         """
@@ -56,14 +55,12 @@ class MaxDBHandler(DatabaseHandler):
         """
         if self.is_connected:
             return self.connection
-        print("*****")
 
         url = 'jdbc:sapdb://' + self.host + ':' + self.port + '/' + self.database
 
         # Open connection to database
         self.connection = jd.connect(self.jdbcClass, url, [self.user, self.password], jars=self.jdbcJarLocation)
         self.is_connected = True
-        print("oulalala")
         return self.connection
 
     def disconnect(self):
@@ -102,107 +99,120 @@ class MaxDBHandler(DatabaseHandler):
 
         return responseCode
 
-    def native_query(self, query: str) -> StatusResponse:
-        """Receive raw query and act upon it somehow.
+
+    def native_query(self, query: str) -> Response:
+        """
+        Receive raw query and act upon it somehow.
         Args:
-            query (Any): query in native format (str for sql databases,
-                dict for mongo, etc)
+            query (str): SQL query to execute.
         Returns:
             HandlerResponse
         """
         need_to_close = self.is_connected is False
-        conn = self.connect()
-        with conn.cursor() as cur:
+
+        connection = self.connect()
+        with connection.cursor() as cursor:
             try:
-                cur.execute(query)
-                if cur.description:
-                    result = cur.fetchall()
+                cursor.execute(query)
+                result = cursor.fetchall()
+                if result:
                     response = Response(
                         RESPONSE_TYPE.TABLE,
-                        data_frame=pd.DataFrame(
+                        data_frame=pd.DataFrame.from_records(
                             result,
-                            columns=[x[0] for x in cur.description]
+                            columns=[x[0] for x in cursor.description]
                         )
                     )
                 else:
                     response = Response(RESPONSE_TYPE.OK)
-                self.connection.commit()
+                    connection.commit()
             except Exception as e:
-                log.logger.error(f'Error running query: {query} on {self.database}!')
+                log.logger.error(f'Error running query: {query} on {self.connection_args["database"]}!')
                 response = Response(
                     RESPONSE_TYPE.ERROR,
                     error_message=str(e)
                 )
-                self.connection.rollback()
 
         if need_to_close is True:
             self.disconnect()
 
         return response
 
-    def query(self, query: ASTNode) -> StatusResponse:
-        """Render and execute a SQL query.
-
-        Args:
-            query (ASTNode): The SQL query.
-
-        Returns:
-            Response: The query result.
+    def query(self, query: ASTNode) -> Response:
         """
-        if isinstance(query, ASTNode):
-            query_str = query.to_string()
-        else:
-            query_str = str(query)
+        Receive query as AST (abstract syntax tree) and act upon it somehow.
+        Args:
+            query (ASTNode): sql query represented as AST. May be any kind
+                of query: SELECT, INSERT, DELETE, etc
+        Returns:
+            HandlerResponse
+        """
 
+        renderer = SqlalchemyRender('maxdb')
+
+        query_str = renderer.get_string(query, with_failback=True)
         return self.native_query(query_str)
 
-    def get_tables(self) -> StatusResponse:
-        """Get a list of all the tables in the database.
-
-        Returns:
-            Response: Names of the tables in the database.
+    def get_tables(self, schema: str = None) -> Response:
         """
-        try:
-            connection = self.connect()
-            cursor = connection.cursor()
-            # Execute query to get all table names
-            cursor.execute(
-                "SELECT table_name FROM sys.tables WHERE table_schema = 'PUBLIC'")
-
-            table_names = [x[0] for x in cursor.fetchall()]
-
-            # Create dataframe with table names
-            df = pd.DataFrame(table_names, columns=['table_name'])
-
-            # Create response object
-            response = Response(
-                RESPONSE_TYPE.TABLE,
-                df
-            )
-
-            return response
-
-        except Exception as e:
-            print(f"Error: {e}")
-            response = Response(
-                RESPONSE_TYPE.ERROR,
-                f"Unable to retrieve table names: {str(e)}"
-            )
-            return response
-
-    def get_columns(self, table_name: str) -> StatusResponse:
-        """Get details about a table.
-
+        Gets a list of table names in the database.
         Args:
-            table_name (str): Name of the table to retrieve details of.
-
+            schema (str): The name of the schema to get tables from. If not provided,
+                gets tables from all schemas in the database.
         Returns:
-            Response: Details of the table.
+            list: A list of table names in the specified schema(s).
         """
+        connection = self.connect()
+        cursor = connection.cursor()
 
-        query = f''' SELECT COLUMNNAME FROM SYS.SYSCOLUMNS INNER JOIN SYS.SYSTABLES ON SYS.SYSCOLUMNS.REFERENCEID=
-                    SYS.SYSTABLES.TABLEID WHERE TABLENAME='{table_name}' '''
-        return self.native_query(query)
+        if schema is None:
+            # Execute query to get all table names from all schemas
+            cursor.execute(
+                "SELECT table_name, table_schema FROM information_schema.tables WHERE table_type='BASE TABLE'")
+        else:
+            # Execute query to get all table names from specified schema
+            cursor.execute(
+                "SELECT table_name, table_schema FROM information_schema.tables WHERE table_type='BASE TABLE' AND table_schema='{}'".format(schema))
+
+        table_names = [x[0] for x in cursor.fetchall()]
+
+        # Create dataframe with table names
+        df = pd.DataFrame(table_names, columns=['table_name'])
+
+        # Create response object
+        response = Response(
+            RESPONSE_TYPE.TABLE,
+            df
+        )
+
+        return response
+
+    def get_columns(self, table_name: str) -> Response:
+        """
+        Gets a list of column names in the specified table.
+        Args:
+            table_name (str): The name of the table to get column names from.
+        Returns:
+            list: A list of column names in the specified table.
+        """
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COLUMN_NAME, DATA_TYPE FROM SYS.TABLE_COLUMNS WHERE SCHEMA_NAME='{}' AND TABLE_NAME='{}'".format(self.schema, table_name))
+        results = cursor.fetchall()
+
+        # construct a pandas dataframe from the query results
+        df = pd.DataFrame(
+            results,
+            columns=['column_name', 'data_type']
+        )
+
+        response = Response(
+            RESPONSE_TYPE.TABLE,
+            df
+        )
+
+        return response
+
 
 
 connection_args = OrderedDict(
