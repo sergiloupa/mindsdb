@@ -9,7 +9,7 @@ class MaxDBHandlerTest(unittest.TestCase):
         cls.kwargs = {
             "connection_data": {
                 "host": "192.168.1.3",
-                "port": 7210,
+                "port": "7210",
                 "user": "DBADMIN",
                 "password": "Asdfg4546",
                 "database": "MaxDB"
@@ -19,7 +19,7 @@ class MaxDBHandlerTest(unittest.TestCase):
 
     def test_0_connect(self):
         self.handler.connect()
-    
+
     def test_1_check_connection(self):
         self.handler.check_connection()
 
@@ -42,7 +42,6 @@ class MaxDBHandlerTest(unittest.TestCase):
     def test_6_get_columns(self):
         res = self.handler.get_columns("TESTTABLEX")
         assert res.type is RESPONSE_TYPE.TABLE
-    
 
 if __name__ == '__main__':
     unittest.main()

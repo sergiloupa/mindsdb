@@ -25,6 +25,7 @@ class MaxDBHandler(DatabaseHandler):
             **kwargs: arbitrary keyword arguments.
         """
         super().__init__(name)
+        print("*")
         self.kwargs = kwargs
         self.parser = parse_sql
         self.database = connection_data['database']
@@ -37,6 +38,7 @@ class MaxDBHandler(DatabaseHandler):
         self.jdbcJarLocation = '/MindsDB/mindsdb/mindsdb/integrations/handlers/maxdb_handler/jdbc_driver/sapdbc.jar'
         self.connection = None
         self.is_connected = False
+        print("**")
 
     def __del__(self):
         """
@@ -44,6 +46,7 @@ class MaxDBHandler(DatabaseHandler):
         """
         if self.is_connected is True:
             self.disconnect()
+        print("***")
 
     def connect(self) -> StatusResponse:
         """
@@ -53,12 +56,14 @@ class MaxDBHandler(DatabaseHandler):
         """
         if self.is_connected:
             return self.connection
+        print("*****")
 
         url = 'jdbc:sapdb://' + self.host + ':' + self.port + '/' + self.database
 
         # Open connection to database
         self.connection = jd.connect(self.jdbcClass, url, [self.user, self.password], jars=self.jdbcJarLocation)
         self.is_connected = True
+        print("oulalala")
         return self.connection
 
     def disconnect(self):
@@ -157,24 +162,33 @@ class MaxDBHandler(DatabaseHandler):
         Returns:
             Response: Names of the tables in the database.
         """
-        connection = self.connect()
-        cursor = connection.cursor()
-        # Execute query to get all table names
-        cursor.execute(
-            "SELECT table_name FROM sys.tables WHERE table_schema = 'PUBLIC'")
+        try:
+            connection = self.connect()
+            cursor = connection.cursor()
+            # Execute query to get all table names
+            cursor.execute(
+                "SELECT table_name FROM sys.tables WHERE table_schema = 'PUBLIC'")
 
-        table_names = [x[0] for x in cursor.fetchall()]
+            table_names = [x[0] for x in cursor.fetchall()]
 
-        # Create dataframe with table names
-        df = pd.DataFrame(table_names, columns=['table_name', 'data_type'])
+            # Create dataframe with table names
+            df = pd.DataFrame(table_names, columns=['table_name'])
 
-        # Create response object
-        response = Response(
-            RESPONSE_TYPE.TABLE,
-            df
-        )
+            # Create response object
+            response = Response(
+                RESPONSE_TYPE.TABLE,
+                df
+            )
 
-        return response
+            return response
+
+        except Exception as e:
+            print(f"Error: {e}")
+            response = Response(
+                RESPONSE_TYPE.ERROR,
+                f"Unable to retrieve table names: {str(e)}"
+            )
+            return response
 
     def get_columns(self, table_name: str) -> StatusResponse:
         """Get details about a table.
