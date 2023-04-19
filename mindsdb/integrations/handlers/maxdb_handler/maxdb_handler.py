@@ -34,7 +34,7 @@ class MaxDBHandler(DatabaseHandler):
         self.user = connection_data['user']
         self.password = connection_data['password']
         self.jdbcClass = 'com.sap.dbtech.jdbc.DriverSapDB'
-        self.jdbcJarLocation = '/Users/falin/PycharmProjects/testing/libs/sapdbc.jar'
+        self.jdbcJarLocation = '/Users/malid/Desktop/marsidmali-algo-assignments/assignment-2023-1/sapdbc.jar'
         self.connection = None
         self.is_connected = False
 

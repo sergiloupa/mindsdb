@@ -1,2 +1,1 @@
-
-from mindsdb.__about__ import __version__  # noqa: F401
+from .__about__ import __version__
