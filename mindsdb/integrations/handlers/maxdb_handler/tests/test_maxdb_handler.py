@@ -3,19 +3,19 @@ from mindsdb.integrations.handlers.maxdb_handler.maxdb_handler import MaxDBHandl
 from mindsdb.api.mysql.mysql_proxy.libs.constants.response_type import RESPONSE_TYPE
 
 
-class DerbyHandlerTest(unittest.TestCase):
+class MaxDBHandlerTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.kwargs = {
             "connection_data": {
-                "host": "localhost",
+                "host": "192.168.1.3",
                 "port": 7210,
-                "user": "ADMIN",
-                "password": "password",
-                "database": "database"
+                "user": "DBADMIN",
+                "password": "Asdfg4546",
+                "database": "MaxDB"
             }
         }
-        cls.handler = MaxDBHandler('test_derby_handler', **cls.kwargs)
+        cls.handler = MaxDBHandler('test_maxdb_handler', **cls.kwargs)
 
     def test_0_connect(self):
         self.handler.connect()
