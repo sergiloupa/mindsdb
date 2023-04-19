@@ -34,7 +34,7 @@ class MaxDBHandler(DatabaseHandler):
         self.user = connection_data['user']
         self.password = connection_data['password']
         self.jdbcClass = 'com.sap.dbtech.jdbc.DriverSapDB'
-        self.jdbcJarLocation = '/Users/falin/PycharmProjects/testing/libs/sapdbc.jar'
+        self.jdbcJarLocation = '/MindsDB/mindsdb/mindsdb/integrations/handlers/maxdb_handler/jdbc_driver/sapdbc.jar'
         self.connection = None
         self.is_connected = False
 
