@@ -135,12 +135,17 @@ class MaxDBHandler(DatabaseHandler):
             self.disconnect()
 
         return response
+
+
     def query(self, query: ASTNode) -> Response:
         """
         Retrieve the data from the SQL statement.
         """
-        renderer = SqlalchemyRender('oracle')
-        query_str = renderer.get_string(query, with_failback=True)
+        if isinstance(query, ASTNode):
+            query_str = query.to_string()
+        else:
+            query_str = str(query)
+
         return self.native_query(query_str)
 
 
@@ -170,7 +175,7 @@ class MaxDBHandler(DatabaseHandler):
 
         return response
 
-    def get_columns(self, table_name: str) -> Response:
+    def get_columns(self,table_name: str) -> Response:
         """
         Gets a list of column names in the specified table.
         Args:
@@ -178,9 +183,11 @@ class MaxDBHandler(DatabaseHandler):
         Returns:
             list: A list of column names in the specified table.
         """
-        q = "SELECT COLUMNNAME FROM DOMAIN.COLUMNS WHERE TABLENAME='{}'".format(table_name)
-        result = self.native_query(q)
-        return result
+        query = (f"""SELECT column_name, type_name 
+        FROM SYSINFO.columns 
+        WHERE table_name = '{table_name}';
+        """)
+        return self.query(query)
 
 
 

@@ -8,7 +8,7 @@ class MaxDBHandlerTest(unittest.TestCase):
     def setUpClass(cls):
         cls.kwargs = {
             "connection_data": {
-                "host": "192.168.1.3",
+                "host": "192.168.1.182",
                 "port": "7210",
                 "user": "DBADMIN",
                 "password": "Asdfg4546",
