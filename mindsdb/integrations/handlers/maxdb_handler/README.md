@@ -1,40 +1,36 @@
-# DB2 Handler
+# Sap MaxDB Handler
 
-This is the implementation of the Apache Derby handler for MindsDB.
+This is the implementation of the Sap MaxDB handler for MindsDB.
 
-## IBM DB2
-Apache Derby, an Apache DB subproject, is an open source relational database implemented entirely in Java and available under the Apache License, Version 2.0.  
-
-Some key features include:
-
-* Derby has a small footprint -- about 3.5 megabytes for the base engine and embedded JDBC driver.
-* Derby is based on the Java, JDBC, and SQL standards.
-* Derby provides an embedded JDBC driver that lets you embed Derby in any Java-based solution.
-* Derby also supports the more familiar client/server mode with the Derby Network Client JDBC driver and Derby Network Server.
-* Derby is easy to install, deploy, and use.
+## Sap MaxDB (What is it?)
+SAP MaxDB is a high-performance, scalable, and reliable relational database management system (RDBMS) that supports a wide range of applications. It is designed to handle large amounts of data with minimal downtime and maximum availability. MaxDB provides advanced features such as backup and recovery, high availability, and online data compression, making it a popular choice for enterprise applications.
 
 
 ## Implementation
-This handler was implemented using the JDBC drivers provided by Apache Derby. To establish connection with the database, `JayDeBeApi` library is used. The `JayDeBeApi` module allows you to connect from Python code to databases using Java JDBC. It provides a Python DB-API v2.0 to that database.
+The MaxDB handler uses the JDBC driver to connect to the MaxDB database. Specifically, it uses the sapdbc.jar file as the driver to establish the connection. To use the MaxDB handler in Python, we use the jaydebeapi module to establish a connection to the database.
 
-The required arguments to establish a connection are,
-* `host`: host to server IP Address or hostname
-* `port`: port through which TCPIP connection is to be made
-* `database`: Database name to be connected
+To establish a connection with SAP MaxDB, the following arguments are required:
+* `host`: IP address of the computer where the database server is running.
+* `port`: The number used by the operating system to identify a specific process or service on the server.
+* `user`: Username used to authenticate and authorize access to a specific database.
+* `password`: Secret authentication credential that is associated with a specific user account.
+* `database`: Database name to be connected.
 
 ## Usage
-In order to make use of this handler and connect to Apache Derby in MindsDB, the following syntax can be used,
+In order to make use of this handler and connect to MaxDB in MindsDB, the following syntax can be used,
 ~~~~sql
-CREATE DATABASE derby_datasource
-WITH engine='derby',
+CREATE DATABASE maxdb_datasource
+WITH engine='maxdb',
 parameters={
     "host": "localhost",
-    "port": "1527",
-    "database": "seconddb"
+    "port": "7210",
+    "user": "username",
+    "password": "password",
+    "database": "DatabaseName"
 };
 ~~~~
 
 Now, you can use this established connection to query your database as follows,
 ~~~~sql
-SELECT * FROM derby_datasource.TESTTABLE;
+SELECT * FROM maxdb_datasource.TESTTABLE;
 ~~~~

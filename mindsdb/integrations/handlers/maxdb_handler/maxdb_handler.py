@@ -102,56 +102,47 @@ class MaxDBHandler(DatabaseHandler):
 
     def native_query(self, query: str) -> Response:
         """
-        Receive raw query and act upon it somehow.
-        Args:
-            query (str): SQL query to execute.
-        Returns:
-            HandlerResponse
+        Receive SQL query and runs it
+        :param query: The SQL query to run in MySQL
+        :return: returns the records from the current recordset
         """
         need_to_close = self.is_connected is False
-
-        connection = self.connect()
-        with connection.cursor() as cursor:
+        conn = self.connect()
+        with conn.cursor() as cur:
             try:
-                cursor.execute(query)
-                result = cursor.fetchall()
-                if result:
+                cur.execute(query)
+                if cur.description:
+                    result = cur.fetchall()
                     response = Response(
                         RESPONSE_TYPE.TABLE,
-                        data_frame=pd.DataFrame.from_records(
+                        data_frame=pd.DataFrame(
                             result,
-                            columns=[x[0] for x in cursor.description]
+                            columns=[x[0] for x in cur.description]
                         )
                     )
                 else:
                     response = Response(RESPONSE_TYPE.OK)
-                    connection.commit()
+                self.connection.commit()
             except Exception as e:
-                log.logger.error(f'Error running query: {query} on {self.connection_args["database"]}!')
+                log.logger.error(f'Error running query: {query} on {self.database}!')
                 response = Response(
                     RESPONSE_TYPE.ERROR,
                     error_message=str(e)
                 )
+                self.connection.rollback()
 
         if need_to_close is True:
             self.disconnect()
 
         return response
-
     def query(self, query: ASTNode) -> Response:
         """
-        Receive query as AST (abstract syntax tree) and act upon it somehow.
-        Args:
-            query (ASTNode): sql query represented as AST. May be any kind
-                of query: SELECT, INSERT, DELETE, etc
-        Returns:
-            HandlerResponse
+        Retrieve the data from the SQL statement.
         """
-
-        renderer = SqlalchemyRender('maxdb')
-
+        renderer = SqlalchemyRender('oracle')
         query_str = renderer.get_string(query, with_failback=True)
         return self.native_query(query_str)
+
 
     def get_tables(self, schema: str = None) -> Response:
         """
@@ -164,16 +155,8 @@ class MaxDBHandler(DatabaseHandler):
         """
         connection = self.connect()
         cursor = connection.cursor()
-
-        if schema is None:
-            # Execute query to get all table names from all schemas
-            cursor.execute(
-                "SELECT table_name, table_schema FROM information_schema.tables WHERE table_type='BASE TABLE'")
-        else:
-            # Execute query to get all table names from specified schema
-            cursor.execute(
-                "SELECT table_name, table_schema FROM information_schema.tables WHERE table_type='BASE TABLE' AND table_schema='{}'".format(schema))
-
+        # Execute query to get all table names from all schemas
+        cursor.execute("SELECT TABLENAME FROM DOMAIN.TABLES WHERE SCHEMANAME='SYSINFO'")
         table_names = [x[0] for x in cursor.fetchall()]
 
         # Create dataframe with table names
@@ -195,23 +178,9 @@ class MaxDBHandler(DatabaseHandler):
         Returns:
             list: A list of column names in the specified table.
         """
-        conn = self.connect()
-        cursor = conn.cursor()
-        cursor.execute("SELECT COLUMN_NAME, DATA_TYPE FROM SYS.TABLE_COLUMNS WHERE SCHEMA_NAME='{}' AND TABLE_NAME='{}'".format(self.schema, table_name))
-        results = cursor.fetchall()
-
-        # construct a pandas dataframe from the query results
-        df = pd.DataFrame(
-            results,
-            columns=['column_name', 'data_type']
-        )
-
-        response = Response(
-            RESPONSE_TYPE.TABLE,
-            df
-        )
-
-        return response
+        q = "SELECT COLUMNNAME FROM DOMAIN.COLUMNS WHERE TABLENAME='{}'".format(table_name)
+        result = self.native_query(q)
+        return result
 
 
 

@@ -1,5 +1,5 @@
 import unittest
-from mindsdb.integrations.handlers.maxdb_handler.maxdb_handler import MaxDBHandler
+from mindsdb.integrations.handlers.maxdb_handler import maxdb_handler
 from mindsdb.api.mysql.mysql_proxy.libs.constants.response_type import RESPONSE_TYPE
 
 
@@ -15,7 +15,7 @@ class MaxDBHandlerTest(unittest.TestCase):
                 "database": "MaxDB"
             }
         }
-        cls.handler = MaxDBHandler('test_maxdb_handler', **cls.kwargs)
+        cls.handler = maxdb_handler('test_maxdb_handler', **cls.kwargs)
 
     def test_0_connect(self):
         self.handler.connect()
